@@ -1,0 +1,44 @@
+{% extends "base-official.html" %}
+{% block title %}New User{% endblock %}
+
+{% block head %}
+<script src="/static/js/jquery-1.12.3.min.js"></script>
+<script src="/static/js/parsley.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Authorize: {{client_name}}</h1>
+
+<p>
+	The third-party client {{client_name}} is asking for permission to interact with AbstractPlay on your behalf. Below is a list of the permissions being requested. Please verify these permissions and feel free to uncheck any permissions you are uncomfortable with or were not expecting. It may hurt the effectiveness of the third-party client, though.
+</p>
+
+<p>
+	When you're ready, click the "Authorize" button. If you decide you don't wish to continue at all, just click the "Cancel" button.
+</p>
+
+<form method="post" action="/auth/oauth/authorize">
+	<table>
+		<thead>
+			<tr>
+				<th>&nbsp;</th>
+				<th>Scope</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody>
+		{% for scope in scopes %}
+			<tr>
+				<td><input type="checkbox" name="authdscopes" value="{{scope.name}}" checked></td>
+				<td>{{scope.name}}</td>
+				<td>{{scope.description}}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	<button type="submit" name="choice" value="accept">Authorize</button>
+	<button type="submit" name="choice" value="deny">Cancel</button>
+</form>
+
+{% endblock %}
+

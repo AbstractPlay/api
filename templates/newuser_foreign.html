@@ -1,0 +1,38 @@
+{% extends "base-official.html" %}
+{% block title %}New User{% endblock %}
+
+{% block head %}
+<script src="/static/js/jquery-1.12.3.min.js"></script>
+<script src="/static/js/parsley.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h1>New User: {{servicename}}</h1>
+
+<form method="post" action="/users" id="form">
+	<input type="hidden" name="serviceid" id="serviceid" value="{{serviceid}}">
+	<input type="hidden" name="foreignid" id="foreignid" value="{{foreignid}}">
+	<p>
+		<label for="username">Username (you can change this later; 3–50 alphanumeric characters, including underscores)</label><br>
+		<input type="text" id="username" name="username" required data-parsley-whitespace="squish" data-parsley-type="alphanum" minlength="3" maxlength="50">
+	</p>
+
+	<p>
+		<label for="email">Email address (will need to be verified before logging in)</label><br>
+		<input type="email" id="email" name="email" value="{{email}}" required>
+	</p>
+
+	<p>
+		<label><input type="checkbox" id="tos" name="tos" required>I have read and understood the <a href="">terms of service</a>.</label>
+	</p>
+
+	<p>
+		<input type="submit">
+	</p>
+</form>
+
+<script type="text/javascript">
+  $('#form').parsley();
+</script>
+{% endblock %}
+

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>AbstractPlay API: {% block title%}{% endblock %}</title>
+		{% block head %}{% endblock %}
+	</head>
+	<body>
+		<img src="/static/images/logo.png" alt="AbstractPlay Logo">
+		<p>
+			You are communicating directly with the Abstract Play API, which is exactly what should be happening since you are logging in or creating a new account. The address bar in your browser should start with "https://api.abstractplay.com" and have a green padlock symbol next to it. If this is not the case, <a href="mailto:admin@abstractplay.com?subject=API Login Screen Problem">please contact the system administrator.</a>
+		</p>
+		<hr>
+		{% block content %}{% endblock %}
+	</body>
+</html>

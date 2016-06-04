@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>AbstractPlay API: {% block title%}{% endblock %}</title>
+		{% block head %}{% endblock %}
+	</head>
+	<body>
+		<img src="/static/images/logo.png" alt="AbstractPlay Logo">
+		<p>
+			You are communicating directly with the Abstract Play API and requesting HTML output. While supported, this does not produce an ideal user experience. <a href="https://www.abstractplay.com">Go to the Abstract Play homepage</a> for the intended HTML interface.
+		</p>
+		<hr>
+		{% block content %}{% endblock %}
+	</body>
+</html>

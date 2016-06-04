@@ -1,0 +1,41 @@
+{% extends "base-official.html" %}
+{% block title %}New User{% endblock %}
+
+{% block head %}
+<script src="/static/js/jquery-1.12.3.min.js"></script>
+<script src="/static/js/parsley.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Log In</h1>
+
+<p>
+	There are a number of ways you can create an account with us. So that you don't have to remember yet another password, consider using one of the following links to create your account using social media. Otherwise, fill out the form at the bottom of the page.
+</p>
+
+<ul>
+	<li><a href="https://api.abstractplay.com/auth/facebook">Facebook</a></li>
+	<li><a href="https://api.abstractplay.com/auth/google">Google</a></li>
+</ul>
+
+<form method="post" action="/auth" id="form">
+	<p>
+		<label for="username">Username or email address</label><br>
+		<input type="text" id="username" name="username" required data-parsley-whitespace="squish">
+	</p>
+
+	<p>
+		<label for="password">Enter your password</label><br>
+		<input type="password" id="password" name="password" required>
+	</p>
+
+	<p>
+		<input type="submit">
+	</p>
+</form>
+
+<script type="text/javascript">
+  $('#form').parsley();
+</script>
+{% endblock %}
+

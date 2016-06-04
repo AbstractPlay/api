@@ -1,0 +1,56 @@
+{% extends "base-official.html" %}
+{% block title %}New User{% endblock %}
+
+{% block head %}
+<script src="/static/js/jquery-1.12.3.min.js"></script>
+<script src="/static/js/parsley.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h1>New User</h1>
+
+<p>
+	There are a number of ways you can create an account with us. So that you don't have to remember yet another password, consider using one of the following links to create your account using social media. Otherwise, fill out the form at the bottom of the page.
+</p>
+
+<ul>
+	<li><a href="https://api.abstractplay.com/forms/newuser/facebook">Facebook</a></li>
+	<li><a href="https://api.abstractplay.com/forms/newuser/google">Google</a></li>
+</ul>
+
+<form method="post" action="/users" id="form">
+	<input type="hidden" id="service" name="serviceid" value="password"
+	<p>
+		<label for="username">Username (you can change this later; 3–50 alphanumeric characters, including underscores)</label><br>
+		<input type="text" id="username" name="username" required data-parsley-whitespace="squish" data-parsley-type="alphanum" minlength="3" maxlength="50">
+	</p>
+
+	<p>
+		<label for="email">Email address (will need to be verified before logging in)</label><br>
+		<input type="email" id="email" name="email" required>
+	</p>
+
+	<p>
+		<label for="password1">Choose a password (8–255 characters long; spaces welcome)</label><br>
+		<input type="password" id="password1" name="password1" required maxlength="255" minlength="8" data-parsley-equalto="#password2">
+	</p>
+
+	<p>
+		<label for="password2">Re-enter the password</label><br>
+		<input type="password" id="password2" name="password2" required maxlength="255" minlength="8" data-parsley-equalto="#password1">
+	</p>
+
+	<p>
+		<label><input type="checkbox" id="tos" name="tos" required>I have read and understood the <a href="">terms of service</a>.</label>
+	</p>
+
+	<p>
+		<input type="submit">
+	</p>
+</form>
+
+<script type="text/javascript">
+  $('#form').parsley();
+</script>
+{% endblock %}
+

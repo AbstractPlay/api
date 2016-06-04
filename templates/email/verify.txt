@@ -1,0 +1,10 @@
+Welcome to AbstractPlay! To enable email notifications and some other 
+features, we need you to verify your email address. 
+
+Apparently you can't view HTML email, so please copy and paste the 
+following link into your browser and then enter the code. 
+
+URL: https://api.abstractplay.com/auth/email
+Code: {{code}}
+Expires after: {{expires}}
+

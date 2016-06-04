@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}New User{% endblock %}
+
+{% block head %}
+<script src="/static/js/jquery-1.12.3.min.js"></script>
+<script src="/static/js/parsley.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h1>User Info (Userid {{user.userid}})</h1>
+
+<p>Name: {{user.username}}</p>
+<p>Member Since: {{user.date_created}}</p>
+
+{% endblock %}
+

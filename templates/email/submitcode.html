@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Verify Email Address{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+<p>Please enter the verification code you received in your email and click Submit:</p>
+<form method="post" action="/auth/email">
+	<input type="text" name="code" id="code">
+	<button type="submit">Submit</button>
+</form>
+{% endblock %}
+

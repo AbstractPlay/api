@@ -30,6 +30,7 @@ re_basic = re.compile(r'^Basic (\S+)$')
 
 def secureheaders():
     headers = cherrypy.response.headers
+    headers['Access-Control-Allow-Origin'] = 'https://www.abstractplay.com'
     headers['X-Frame-Options'] = 'DENY'
     headers['X-XSS-Protection'] = '1; mode=block'
     # headers['Content-Security-Policy'] = "default-src 'none'; script-src 'self' 'unsafe-inline' connect.facebook.net apis.google.com; connect-src 'self'; img-src 'self' data: www.facebook.com apis.google.com; style-src 'self' 'unsafe-inline'; child-src 'self' accounts.google.com staticxx.facebook.com www.facebook.com;"
@@ -42,6 +43,7 @@ def extract_headers():
 		d = {}
 		d['userid'] = cherrypy.session.get('userid')
 		d['scopes'] = 'FULL'
+		d['type'] = 'session'
 		#headers['X-Auth-Results'] = json.dumps(d)
 		cherrypy.request.params['authdata'] = d
 		return
@@ -58,6 +60,8 @@ def extract_headers():
 					d = {}
 					d['userid'] = rec.userid
 					d['scopes'] = rec.scopes
+					d['type'] = 'bearer'
+					d['clientid'] = rec.clientid
 					#headers['X-Auth-Results'] = json.dumps(d)
 					cherrypy.request.params['authdata'] = d
 					return
@@ -76,6 +80,7 @@ def extract_headers():
 							d = {}
 							d['userid'] = rec.userid
 							d['scopes'] = 'FULL'
+							d['type'] = 'authorization'
 							#headers['X-Auth-Results'] = json.dumps(d)
 							cherrypy.request.params['authdata'] = d
 							return
@@ -91,29 +96,40 @@ cherrypy.tools.authtool = cherrypy.Tool('before_handler', extract_headers, prior
 #
 #cherrypy.tools.authreqd = cherrypy.Tool('before_handler', auth_required, priority=55)
 
+description = '''![Logo](https://www.abstractplay.com/images/logo.png)
+# Abstract Play API Server
+
+Abstract Play makes available abstract strategy board games on the web. It was designed to allow those of us with limited free time to enjoy the interaction with live opponents on one's own schedule. Players can submit their move and continue on with their day. Should the opponent happen to be online at the same time, there is nothing stopping them from exchanging a number of moves in quick succession, but the design does not require it.
+
+Abstract Play is a whole-cloth reimplementation of my previous project, [Super Duper Games](http://superdupergames.org). 
+
+Please see the [terms of service](/static/tos.html) for more information on how to use this service, our privacy policy, and other points of intellectual property.
+'''
+
 from lib.auth import Auth
 from lib.users import Users
 from lib.forms import Forms
 from lib.debug import Debug
+from lib.games import Games
 
 class Root(object):
 	exposed = True
 
-	@cherrypy.tools.accept(media="application/json")
 	@cherrypy.tools.json_out()
 	def GET(self):
-		return {'salutation': 'Hello, world!'}
+		cherrypy.response.headers['Link'] = '&lt;https://www.abstractplay.com/schemas/resources_root/1-0-0.json#&gt;; rel="describedBy"'
+		return {'desc': description}
 
-	@cherrypy.tools.accept(media="text/html")
-	def GET(self):
+	# @cherrypy.tools.accept(media="text/html")
+	# def GET(self):
 #		client = MongoClient()
 #		db = client.test_database
 #		post = {"author": "Mike", "text": "My first blog post!", "tags": ["mongodb", "python", "pymongo"]}
 #		posts = db.posts
 #		post_id = posts.insert_one(post).inserted_id
 #		return str(post_id)
-		tmpl = env.get_template('base.html')
-		return tmpl.render()
+		# tmpl = env.get_template('base.html')
+		# return tmpl.render()
 
 	def OPTIONS(self):
 		return None
@@ -123,6 +139,7 @@ root.auth = Auth()
 root.users = Users()
 root.forms = Forms()
 root.debug = Debug()
+root.games = Games()
 
 if __name__ == '__main__':
 	cherrypy.tools.db = SQLAlchemyTool()

@@ -40,23 +40,32 @@ class Users(object):
 	def __init__(self):
 		self.me = Me()
 
-	@cherrypy.tools.accept(media="application/json")
 	@cherrypy.tools.json_out()
-	def GET(self):
-		return None
-
-	@cherrypy.tools.accept(media="text/html")
 	@cherrypy.popargs('userid')
-	def GET(self, userid=None):
+	def GET(self, userid=None, offset=0, count=None):
 		if (userid is None):
-			return None
+			d = dict()
+			d['data'] = []
+			d['offset'] = offset
+			q = self.db.query(lib.db.User).order_by(lib.db.User.userid)
+			d['total'] = q.count()
+			q = q.offset(offset)
+			if (count is not None):
+				q = q.limit(count)
+				d['count'] = count
+			rows = q.all()
+			for row in rows:
+				d['data'].append(row.to_public_resource())
+			cherrypy.response.headers['Link'] = '&lt;https://www.abstractplay.com/schemas/resources_user/1-0-0.json#&gt;; rel="describedBy"'
+			return d
 		elif (userid == 'new'):
 			raise cherrypy.InternalRedirect('/user/new')
 		else:
 			q = self.db.query(lib.db.User).filter(lib.db.User.userid==userid)
 			if (q.count() == 1):
-				tmpl = env.get_template('userinfo.html')
-				return tmpl.render(user=q.first())
+				cherrypy.response.headers['Link'] = '&lt;https://www.abstractplay.com/schemas/resources_user/1-0-0.json#&gt;; rel="describedBy"'
+				rec = q.first()
+				return rec.to_public_resource()
 			else:
 				raise cherrypy.HTTPError(404, "The given userid ({0}) could not be found.".format(userid))
 

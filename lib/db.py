@@ -18,6 +18,7 @@ class User(Base):
 	email_verified = Column(Boolean)
 	deleted = Column(Boolean)
 	date_deleted = Column(DateTime)
+	country = Column(String)
 
 	password = relationship("Password", uselist=False, back_populates="user")
 	namehistory = relationship('NameHistory', back_populates="user")
@@ -26,10 +27,26 @@ class User(Base):
 	authcodes = relationship("OAuthCode", back_populates="user")
 	accesstokens = relationship("OAuthAccess", back_populates="user")
 	refreshtokens = relationship("OAuthRefresh", back_populates="user")
+	tags = relationship("GameTags", back_populates="user")
 
 	def __repr__(self):
 		return "<User(id={0}, name={1}, created={2}, email={3}, namehistory={4}, oauth={5}, clients={6}, authcodes={7}, accesstokens={8}, refreshtokens={9})>".format(self.userid, self.username, self.date_created, self.email, self.namehistory, self.oauth, self.clients, self.authcodes, self.accesstokens, self.refreshtokens)
 		#return self.to_JSON()
+
+	def to_public_resource(self):
+		history = []
+		for hist in self.namehistory:
+			node = {}
+			node['name'] = hist.name
+			node['effective_date'] = hist.date_effective.isoformat()
+			history.append(node)
+		return {
+			'id': self.userid,
+			'name': self.username,
+			'member_since': self.date_created.isoformat(),
+			'country': self.country,
+			'name_history': history
+		}
 
 	def to_dict(self):
 		return {
@@ -74,6 +91,12 @@ class Password(Base):
 	password = Column(String)
 
 	user = relationship("User", back_populates='password')
+
+class Country(Base):
+	__tablename__ = 'meta_countries'
+
+	code = Column(String, primary_key=True)
+	name = Column(String)
 
 class OAuth(Base):
 	__tablename__ = 'user_oauth'
@@ -185,4 +208,73 @@ class EmailVerify(Base):
 	code = Column(String)
 	expires = Column(DateTime)
 
+class GameInfo(Base):
+	__tablename__ = 'games_info'
 
+	id = Column(String, primary_key=True)
+	name = Column(String)
+	live_date = Column(DateTime)
+	description = Column(String)
+	url = Column(String)
+	is_live = Column(Boolean)
+	playercounts = Column(String)
+	version = Column(Integer)
+	state = Column(String)
+	changelog = Column(String)
+	publisherid = Column(Integer, ForeignKey("games_info_publishers.id"))
+	rating = Column(Integer)
+
+	publisher = relationship("Publisher", uselist=False, back_populates="games")
+	status_history = relationship("GameStatus", back_populates="game")
+	variants = relationship("GameVariant", back_populates="game")
+	tags = relationship("GameTags", back_populates="game")
+
+	def __repr__(self):
+		return "<GameInfo(id={}, name={}, rating={}, live_date={}, description={}, url={}, is_live={}, playercounts={}, version={}, state={}, changelog={}, publisher={}, variants={})>".format(self.id, self.name, self.rating, self.live_date, self.description, self.url, self.is_live, self.playercounts, self.version, self.state, self.changelog, self.publisher, self.variants)
+
+class Publisher(Base):
+	__tablename__ = 'games_info_publishers'
+
+	id = Column(Integer, primary_key=True)
+	name = Column(String)
+	url = Column(String)
+	email_admin = Column(String)
+	email_technical = Column(String)
+
+	games = relationship("GameInfo", back_populates="publisher")
+
+	def __repr__(self):
+		return "<Publisher(id={}, name={}, url={}, email_admin={}, email_technical={})>".format(self.id, self.name, self.url, self.email_admin, self.email_technical)
+
+class GameStatus(Base):
+	__tablename__ = 'games_info_status'
+
+	id = Column(Integer, primary_key=True)
+	gameid = Column(String, ForeignKey("games_info.id"))
+	timestamp = Column(DateTime)
+	is_up = Column(Boolean)
+	msg = Column(String)
+
+	game = relationship("GameInfo", back_populates="status_history")
+
+class GameVariant(Base):
+	__tablename__ = 'games_info_variants'
+
+	id = Column(Integer, primary_key=True)
+	gameid = Column(String, ForeignKey("games_info.id"))
+	name = Column(String)
+	note = Column(String)
+	group = Column(String)
+
+	game = relationship("GameInfo", back_populates="variants")
+
+class GameTags(Base):
+	__tablename__ = 'games_info_tags'
+
+	id = Column(Integer, primary_key=True)
+	gameid = Column(String, ForeignKey("games_info.id"))
+	userid = Column(Integer, ForeignKey("user.userid"))
+	tag = Column(String)
+
+	game = relationship("GameInfo", back_populates="tags")
+	user = relationship("User", back_populates="tags")

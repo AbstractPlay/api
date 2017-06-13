@@ -93,11 +93,21 @@ class Authorize(object):
 				url += '&state=' + quote(oauth['state'])
 			raise cherrypy.HTTPRedirect(url)
 		else:
+			if isinstance(authdscopes, str):
+				authdscopes = [authdscopes]
 			if (oauth['response_type'] == 'token'):
-				token = lib.common.genHexStr(128)
+				token = ''
 				expires = datetime.datetime.now() + datetime.timedelta(hours=1)
-				rec = lib.db.OAuthAccess(clientid=oauth['real_client_id'], userid=cherrypy.session.get('userid'), token=token, expires=expires, scopes=' '.join(authdscopes))
-				self.db.add(rec)
+				q = self.db.query(lib.db.OAuthAccess).filter(lib.db.OAuthAccess.clientid == oauth['real_client_id']).filter(lib.db.OAuthAccess.userid == cherrypy.session.get('userid'))
+				if (q.count() == 1):
+					rec = q.first()
+					rec.expires = expires
+					rec.scopes = ' '.join(authdscopes)
+					token = rec.token
+				else:
+					token = lib.common.genHexStr(128)
+					rec = lib.db.OAuthAccess(clientid=oauth['real_client_id'], userid=cherrypy.session.get('userid'), token=token, expires=expires, scopes=' '.join(authdscopes))
+					self.db.add(rec)
 				self.db.commit()
 				url = oauth['redirect_uri']
 				url += '#access_token=' + quote(token)
@@ -109,6 +119,11 @@ class Authorize(object):
 				cherrypy.session['oauth'] = None
 				raise cherrypy.HTTPRedirect(url)
 			else:
+				q = self.db.query(lib.db.OAuthCode).filter(lib.db.OAuthCode.clientid == oauth['real_client_id']).filter(lib.db.OAuthCode.userid == cherrypy.session.get('userid'))
+				if (q.count() == 1):
+					rec = q.first()
+					self.db.delete(rec)
+					self.db.commit
 				token = lib.common.genHexStr(64)
 				expires = datetime.datetime.now() + datetime.timedelta(minutes=10)
 				rec = lib.db.OAuthCode(clientid=oauth['real_client_id'], userid=cherrypy.session.get('userid'), code=token, expires=expires, redirect_uri=oauth['redirect_uri'], scopes=' '.join(authdscopes))
@@ -256,7 +271,7 @@ class GoogleCallback(object):
 		if 'error' in kwargs:
 			raise cherrypy.HTTPError("400 Bad Request", "An error occurred while attempting to log in to Google.")
 		if 'code' not in kwargs:
-			raise cherrypy.HTTPError("502 Bad Gatewat", "Google did not provide an expected response.")
+			raise cherrypy.HTTPError("502 Bad Gateway", "Google did not provide an expected response.")
 		code = kwargs['code']
 
 		try:

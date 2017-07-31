@@ -15,77 +15,17 @@ templatesdir = os.getenv('ABSTRACTPLAY_TEMPLATESDIR', '/home/protected/server/te
 from jinja2 import Environment, FileSystemLoader
 env = Environment(loader=FileSystemLoader(templatesdir))
 
-class Email(object):
-	exposed = True
+class Issuer(object):
+	exposed = False
 
 	@property
 	def db(self):
 	    return cherrypy.request.db
 
-	def GET(self, **kwargs):
-		if ('code' in kwargs):
-			q = self.db.query(lib.db.EmailVerify).filter(lib.db.EmailVerify.code == kwargs['code']).filter(lib.db.EmailVerify.expires > datetime.datetime.now())
-			if (q.count() != 1):
-				raise cherrypy.HTTPError(400, "Invalid or expired authorization code. Please request a new code.")
-			coderec = q.first()
-
-			#find user
-			q = self.db.query(lib.db.User).filter(lib.db.User.email == coderec.email)
-			if (q.count() != 1):
-				raise cherrypy.HTTPError(400, "That code does not map to an existing user. Did you delete your account or change your email address?")
-			user = q.first()
-
-			#mark the user as verified
-			user.email_verified = True
-
-			#delete the code
-			self.db.delete(coderec)
-
-			#commit changes
-			self.db.commit()
-
-			#return confirmation
-			tmpl = env.get_template('email/verified.html')
-			return tmpl.render()
-		else:
-			tmpl = env.get_template('email/submitcode.html')
-			return tmpl.render()
-
-	def POST(self, code):
-		raise cherrypy.HTTPRedirect('/auth/email?code={0}'.format(code))
-
-class Authorize(object):
-	exposed = True
-
-	@property
-	def db(self):
-	    return cherrypy.request.db
-
-	def GET(self):
+	def issueToken(self, authdscopes, choice):
 		oauth = cherrypy.session.get('oauth')
 		if (oauth is None):
 			raise cherrypy.HTTPError("400 Bad Request", "You should only be here as part of an OAuth login flow. Something has gone wrong. If this persists, please contact the system administrator.")
-
-		#gather scopes
-		allscopes = self.db.query(lib.db.Scope).all()
-		reqdscopes = []
-		for rec in allscopes:
-			if (rec.name in oauth['scopes']):
-				reqdscopes.append(rec)
-
-		q = self.db.query(lib.db.Client).filter(lib.db.Client.app_id == oauth['client_id'])
-		if (q.count() != 1):
-			raise cherrypy.HTTPError(400, "Unrecognized client_id.")
-		rec = q.first()
-
-		tmpl = env.get_template('authorize.html')
-		return tmpl.render(client_name=rec.clientname, scopes=reqdscopes)
-
-	def POST(self, authdscopes, choice):
-		oauth = cherrypy.session.get('oauth')
-		if (oauth is None):
-			raise cherrypy.HTTPError("400 Bad Request", "You should only be here as part of an OAuth login flow. Something has gone wrong. If this persists, please contact the system administrator.")
-
 		if (choice == 'deny'):
 			url = oauth['redirect_uri']
 			url += '?error=access_denied'
@@ -135,6 +75,78 @@ class Authorize(object):
 					url += '&state=' + quote(oauth['state'])
 				cherrypy.session['oauth'] = None
 				raise cherrypy.HTTPRedirect(url)
+
+class Email(object):
+	exposed = True
+
+	@property
+	def db(self):
+	    return cherrypy.request.db
+
+	def GET(self, **kwargs):
+		if ('code' in kwargs):
+			q = self.db.query(lib.db.EmailVerify).filter(lib.db.EmailVerify.code == kwargs['code']).filter(lib.db.EmailVerify.expires > datetime.datetime.now())
+			if (q.count() != 1):
+				raise cherrypy.HTTPError(400, "Invalid or expired authorization code. Please request a new code.")
+			coderec = q.first()
+
+			#find user
+			q = self.db.query(lib.db.User).filter(lib.db.User.email == coderec.email)
+			if (q.count() != 1):
+				raise cherrypy.HTTPError(400, "That code does not map to an existing user. Did you delete your account or change your email address?")
+			user = q.first()
+
+			#mark the user as verified
+			user.email_verified = True
+
+			#delete the code
+			self.db.delete(coderec)
+
+			#commit changes
+			self.db.commit()
+
+			#return confirmation
+			tmpl = env.get_template('email/verified.html')
+			return tmpl.render()
+		else:
+			tmpl = env.get_template('email/submitcode.html')
+			return tmpl.render()
+
+	def POST(self, code):
+		raise cherrypy.HTTPRedirect('/auth/email?code={0}'.format(code))
+
+class Authorize(Issuer):
+	exposed = True
+
+	@property
+	def db(self):
+	    return cherrypy.request.db
+
+	def GET(self):
+		oauth = cherrypy.session.get('oauth')
+		if (oauth is None):
+			raise cherrypy.HTTPError("400 Bad Request", "You should only be here as part of an OAuth login flow. Something has gone wrong. If this persists, please contact the system administrator.")
+
+		#gather scopes
+		allscopes = self.db.query(lib.db.Scope).all()
+		reqdscopes = []
+		for rec in allscopes:
+			if (rec.name in oauth['scopes']):
+				reqdscopes.append(rec)
+
+		q = self.db.query(lib.db.Client).filter(lib.db.Client.app_id == oauth['client_id'])
+		if (q.count() != 1):
+			raise cherrypy.HTTPError(400, "Unrecognized client_id.")
+		rec = q.first()
+
+		tmpl = env.get_template('authorize.html')
+		return tmpl.render(client_name=rec.clientname, scopes=reqdscopes)
+
+	def POST(self, authdscopes, choice):
+		oauth = cherrypy.session.get('oauth')
+		if (oauth is None):
+			raise cherrypy.HTTPError("400 Bad Request", "You should only be here as part of an OAuth login flow. Something has gone wrong. If this persists, please contact the system administrator.")
+		self.issueToken(authdscopes, choice)
 
 class Code2Token(object):
 	exposed = True
@@ -260,7 +272,7 @@ class Logout(object):
 		cherrypy.lib.sessions.expire()
 		raise cherrypy.HTTPRedirect("/auth")
 
-class GoogleCallback(object):
+class GoogleCallback(Issuer):
 	exposed = True
 
 	@property
@@ -295,8 +307,10 @@ class GoogleCallback(object):
 
 		#redirect them wherever
 		oauth = cherrypy.session.get('oauth')
-		if (oauth is not None):
+		if ( (oauth is not None) and (oauth['real_client_id'] != 1) ):
 			raise cherrypy.HTTPRedirect('/auth/oauth/authorize')
+		elif (oauth is not None):
+			self.issueToken('FULL', 'accept')
 		else:
 			raise cherrypy.HTTPRedirect('/users/me')
 
@@ -313,7 +327,7 @@ class Google(object):
 		redirect = 'https://api.abstractplay.com/auth/google/callback'
 		raise cherrypy.HTTPRedirect('https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={0}&redirect_uri={1}&scope=profile%20email&state={2}'.format(quote(gid), quote(redirect), quote(state)))
 
-class FacebookCallback(object):
+class FacebookCallback(Issuer):
 	exposed = True
 
 	@property
@@ -352,8 +366,10 @@ class FacebookCallback(object):
 
 		#redirect them wherever
 		oauth = cherrypy.session.get('oauth')
-		if (oauth is not None):
+		if ( (oauth is not None) and (oauth['real_client_id'] != 1) ):
 			raise cherrypy.HTTPRedirect('/auth/oauth/authorize')
+		elif (oauth is not None):
+			self.issueToken('FULL', 'accept')
 		else:
 			raise cherrypy.HTTPRedirect('/users/me')
 
@@ -370,7 +386,7 @@ class Facebook(object):
 		redirect = 'https://api.abstractplay.com/auth/facebook/callback'
 		raise cherrypy.HTTPRedirect('https://www.facebook.com/dialog/oauth?client_id={0}&redirect_uri={1}&state={2}&response_type=code&scope=email'.format(quote(fbid), quote(redirect), quote(state)))
 
-class Auth(object):
+class Auth(Issuer):
 	exposed = True
 
 	@property
@@ -407,8 +423,10 @@ class Auth(object):
 
 		#redirect them wherever
 		oauth = cherrypy.session.get('oauth')
-		if (oauth is not None):
+		if ( (oauth is not None) and (oauth['real_client_id'] != 1) ):
 			raise cherrypy.HTTPRedirect('/auth/oauth/authorize')
+		elif (oauth is not None):
+			self.issueToken('FULL', 'accept')
 		else:
 			raise cherrypy.HTTPRedirect('/users/me')
 

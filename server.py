@@ -111,6 +111,7 @@ from lib.users import Users
 from lib.forms import Forms
 from lib.debug import Debug
 from lib.games import Games
+from lib.query import GraphQL
 
 class Root(object):
 	exposed = True
@@ -140,6 +141,7 @@ root.users = Users()
 root.forms = Forms()
 root.debug = Debug()
 root.games = Games()
+root.query = GraphQL()
 
 if __name__ == '__main__':
 	cherrypy.tools.db = SQLAlchemyTool()

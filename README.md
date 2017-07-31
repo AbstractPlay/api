@@ -2,7 +2,7 @@
 
 Version: unnumbered alpha
 
-Nothing to see here yet. This project is in the very early stages. No real documentation yet, but it's coming.
+This project is in the very early stages. No real documentation yet, but it's coming.
 
 The way to use this is to clone or download the repository, create a virtual environment, install the dependencies (`requirements.txt`), then run.
 
@@ -11,6 +11,14 @@ The way to use this is to clone or download the repository, create a virtual env
 The [main website](https://www.abstractplay.com) houses the development blog, wiki, and first-party front end.
 
 ## Change log
+
+31 Jul 2017:
+
+  * Streamlined login flow for official client.
+  * Added [GraphQL](http://graphql.org/) endpoint (`/query`) using [Graphene](http://graphene-python.org/).
+    * Mutation is not supported yet (and may never be).
+    * No authorization cheks yet (so only public information currently available).
+  * Cleaned up `requirements.txt`.
 
 13 Jun 2017:
 

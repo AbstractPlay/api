@@ -2,3 +2,4 @@ __pycache__
 sessions/*
 logs/*
 venv/*
+scratch.py

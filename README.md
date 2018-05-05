@@ -11,6 +11,9 @@ The way to use this is to clone or download the repository, create a virtual env
 The [main website](https://www.abstractplay.com) houses the development blog, wiki, and first-party front end.
 
 ## Change log
+05 May 2018:
+
+  * Moving to AWS ([see the development blog](https://www.abstractplay.com/blog)). Archiving this repository.
 
 31 Jul 2017:
 
